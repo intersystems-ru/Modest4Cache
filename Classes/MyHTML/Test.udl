@@ -93,5 +93,22 @@ ClassMethod Run()
     do ..Test2()
 }
 
+ClassMethod RunCrash(i As %Integer)
+{
+	for j=1:1:20{
+		s a = $i(^MyHTML.Test.Stat(i))
+		do ..Test3()
+	}
+}
+
+ClassMethod CollectStat()
+{
+	k ^MyHTML.Test.Stat
+	for i=1:1:100{
+		j ..RunCrash(i)
+	}
+	zw ^MyHTML.Test.Stat
+}
+
 }
 

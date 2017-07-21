@@ -34,11 +34,5 @@ Method TagNameById(tagId As %Integer) As %String
     return ..CNA.ConvertPointerToString(strPtr)
 }
 
-Method %OnClose() As %Status
-{
-    do ..CNA.CallFunction("myhtml_tree_destroy",..CNA.#VOID,$lb(..CNA.#POINTER),..MyHtmlTreePtr)
-    return $$$OK
-}
-
 }
 

@@ -33,11 +33,5 @@ ClassMethod GetPointerToNullPointer(cna As CNA.CNA) As %CacheString
     return cna.ConvertStreamToPointer(stream)
 }
 
-Method %OnClose() As %Status
-{
-    do ..CNA.CallFunction("myhtml_destroy",..CNA.#VOID,$lb(..CNA.#POINTER),..MyHtmlPtr)
-    return $$$OK
-}
-
 }
 
