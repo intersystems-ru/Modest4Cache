@@ -42,6 +42,47 @@ ClassMethod PrintTree(tree As MyHTML.MyHTMLTree, node As MyHTML.MyHTMLTreeNode, 
     }
 }
 
+ClassMethod PrintTreeNode(tree As MyHTML.MyHTMLTree, node As MyHTML.MyHTMLTreeNode, level As %Integer)
+{
+    while $isobject(node)
+    {
+        for j = 1:1:level  write "  "
+        set tagId = node.TagId()
+        set tagName = tree.TagNameById(tagId)
+        if tagName '= ""
+        {
+            write "<"_tagName
+        }
+        else
+        {
+            write "<!wrong!"
+        }
+        set attr = node.FirstAttribute()
+        while $isobject(attr)
+        {
+            set name = attr.Key()
+            if name '= ""
+            {
+                write " "_name
+                set value = attr.Value()
+                if value '= ""  write "="""_value_""""
+            }
+            set attr = attr.Next()
+        }
+        if node.IsCloseSelf()  w "/"
+        if (tagId = ##class(MyHTMLTreeNode).#TagIdText) || (tagId = ##class(MyHTMLTreeNode).#TagIdComment)
+        {
+            w ">: "_node.Text(), !
+        }
+        else
+        {
+            w ">", !
+        }
+        do ..PrintTree(tree,node.FirstChild(),level+1)
+        set node = node.FirstChild()
+    }
+}
+
 ClassMethod Test1()
 {
     set myHtml = ##class(MyHTML.MyHTML).%New()
@@ -81,7 +122,7 @@ ClassMethod Test3()
     set list = finder.FindBySelectorList(node, selectorList)
     for i = 1:1:list.Count()
     {
-        do ..PrintTree(tree,list.GetAt(i),0)
+        do ..PrintTreeNode(tree,list.GetAt(i),0)
         w !
     }
 }
@@ -95,19 +136,19 @@ ClassMethod Run()
 
 ClassMethod RunCrash(i As %Integer)
 {
-	for j=1:1:20{
-		s a = $i(^MyHTML.Test.Stat(i))
-		do ..Test3()
-	}
+    for j=1:1:20{
+        s a = $i(^MyHTML.Test.Stat(i))
+        do ..Test3()
+    }
 }
 
 ClassMethod CollectStat()
 {
-	k ^MyHTML.Test.Stat
-	for i=1:1:100{
-		j ..RunCrash(i)
-	}
-	zw ^MyHTML.Test.Stat
+    k ^MyHTML.Test.Stat
+    for i=1:1:100{
+        j ..RunCrash(i)
+    }
+    zw ^MyHTML.Test.Stat
 }
 
 }
