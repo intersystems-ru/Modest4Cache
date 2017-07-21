@@ -1,0 +1,25 @@
+Class Modest.MyCSSSelectors Extends %RegisteredObject
+{
+
+Property CNA As CNA.CNA [ Private ];
+
+Property MyCssSelectorsPtr As %CacheString [ Private ];
+
+Method %OnNew(cna As CNA.CNA, myCssSelectorsPtr As %CacheString) As %Status
+{
+    set ..CNA = cna
+    set ..MyCssSelectorsPtr = myCssSelectorsPtr
+    return $$$OK
+}
+
+Method Parse(selector As %String) As Modest.MyCSSSelectorList
+{
+    set selectorPtr = ..CNA.ConvertStringToPointer(selector)
+    set listPtr = ..CNA.CallFunction("mycss_selectors_parse",
+        ..CNA.#POINTER,$lb(..CNA.#POINTER,..CNA.#INT,..CNA.#POINTER,..CNA.#INT,..CNA.#POINTER),
+        ..MyCssSelectorsPtr,##class(MyHTML.MyHTMLTree).#MyEncodingUtf8,selectorPtr,$l(selector),..CNA.NULL)
+    return ##class(Modest.MyCSSSelectorList).%New(..CNA,listPtr)
+}
+
+}
+

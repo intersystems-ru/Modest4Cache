@@ -1,0 +1,186 @@
+/// Checks russian system localizaion.
+Class CNA.Examples.Speller Extends %RegisteredObject [ StorageStrategy = "" ]
+{
+
+Property CNA As CNA.CNA;
+
+Property LibC As CNA.CNA;
+
+Property Hunspell As %String;
+
+Method %OnNew(CNAPath As %String, hunspellPath As %String, libcPath As %String, affPath As %String, dicPath As %String) As %Status [ Private, ServerOnly = 1 ]
+{
+	try {
+		// Проверяем существование нужных файлы 
+		if (('$data(CNAPath)) || ('##class(%File).Exists(CNAPath))) {
+			return $$$ERROR("CNA file doesn't exists")	
+		}
+		if (('$data(hunspellPath)) || ('##class(%File).Exists(hunspellPath))) {
+			return $$$ERROR("hunspell file doesn't exists")	
+		}
+		if (('$data(libcPath)) || ('##class(%File).Exists(libcPath))) {
+			return $$$ERROR("libc file doesn't exists")	
+		}
+		if (('$data(affPath)) || ('##class(%File).Exists(affPath))) {
+			return $$$ERROR(".aff file doesn't exists")	
+		}
+		if (('$data(dicPath)) || ('##class(%File).Exists(dicPath))) {
+			return $$$ERROR(".dic file doesn't exists")	
+		}
+		
+		// Создаем объекты класса CNA.CNA и загружаем туда библиотеки
+		set ..CNA = ##class(CNA.CNA).%New(CNAPath)
+		set ..LibC = ##class(CNA.CNA).%New(CNAPath)
+		do ..CNA.LoadLibrary(hunspellPath)
+		do ..LibC.LoadLibrary(libcPath)
+		
+		// Конвертируем строки в указатели, что бы передать их в CNA
+		set aff = ..CNA.ConvertStringToPointer(affPath)
+		set dic = ..CNA.ConvertStringToPointer(dicPath)
+		
+		// Создаем объект hunspell, передаем туда файлы словарей
+		set argTypes = $lb(..CNA.#POINTER, ..CNA.#POINTER)
+		set ..Hunspell =  ..CNA.CallFunction("Hunspell_create", ..CNA.#POINTER, argTypes, aff, dic)
+	} catch ex {
+		do ex.Log()
+		return ex.AsStatus()
+	}
+	
+	Quit $$$OK
+}
+
+Method %OnClose() As %Status [ Private, ServerOnly = 1 ]
+{
+	try {
+
+		// Удаляем объект hunspell и выгружаем бибилиотеки
+		set argTypes = $lb(..CNA.#POINTER)
+		do ..CNA.CallFunction("Hunspell_destroy", ..CNA.#VOID, argTypes, ..Hunspell)
+		do ..CNA.FreeLibrary()
+		do ..LibC.FreeLibrary()
+	} catch ex {
+		do ex.Log()
+		return ex.AsStatus()
+	}
+	Quit $$$OK
+}
+
+/// True - correct word, false - incorrect word
+Method Spell(word As %String) As %Boolean
+{
+
+	// Вызываем функцию проверки слова
+	// Прототип - int Hunspell_spell(Hunhandle *pHunspell, const char *);
+	// Передаем в качестве аргументов указатель на объект hunspell и указатель на проверяемую строку
+
+	set pWord = ..CNA.ConvertStringToPointer(word)
+	set argTypes = $lb(..CNA.#POINTER, ..CNA.#POINTER)
+	set res = ..CNA.CallFunction("Hunspell_spell", ..CNA.#INT, argTypes, ..Hunspell, pWord)
+	return res
+}
+
+Method Suggest(word As %String) As %List
+{
+	set pWord = ..CNA.ConvertStringToPointer(word)
+	
+	// Выделяем память под буфер, куда будем записывать варианты
+	set argTypes = $lb(..CNA.#SIZET)
+	set pArray = ..LibC.CallFunction("malloc", ..LibC.#POINTER, argTypes, 8)
+	
+	
+	// Вызываем функцию Hunspell_suggest, которая предлагает варианты правильного написания
+	// Прототип - int Hunspell_suggest(Hunhandle *pHunspell, char*** slst, const char * word);
+	// slst - указатель на переменную типа char **, куда Hunspell запишет массив строк с предложениям написания
+	// Функция возвращает общее число предложений
+	
+	set argTypes = $lb(..CNA.#POINTER, ..CNA.#POINTER, ..CNA.#POINTER)
+	set numberOfSuggestions = ..CNA.CallFunction("Hunspell_suggest", ..CNA.#INT, argTypes, ..Hunspell, pArray, pWord)
+
+	set suggestions = ""
+
+	// Разыменовавыаем указатель - получаем массив строк
+	set array = ..CNA.PointerGetAt(pArray, ..CNA.#POINTER, 0)
+	
+	// Проходим по всему массиву и конвертируем массив строк C в список из строк Cache
+	for i=1:1:numberOfSuggestions {
+		set elem = ..CNA.PointerGetAt(array, ..CNA.#POINTER, i - 1)
+		set $li(suggestions, *+1) = ..CNA.ConvertPointerToString(elem)
+	}
+	
+	// Освобождаем выделенную память и возвращаем список предложений
+	set argTypes = $lb(..CNA.#POINTER)
+	do ..LibC.CallFunction("free", ..LibC.#VOID, argTypes, pArray)
+	return suggestions
+}
+
+/// Checks strings in russian language and writes info about all mistakes in stdout.
+/// String is splitted to words by following rules: all punctuation marks will be replaced by spaces, all symbols except russian cyrillic and hyphen will be stripped, then string is splitted by the spaces.
+/// Return value is the number of mistakes in the string. 
+/// 
+Method CheckRuString(str As %String) As %Integer
+{
+	set translated = $TRANSLATE(str, ".,\/=*:", "      ")
+	set stripped =  $ZSTRIP(translated, "*E", "", " -йцукеёнгшщзхъфывапролджэячсмитьбюЙЦУКЕЁНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ")
+	set list = $LFS(stripped, " ")
+						
+	set ptr = 0
+	set count = 0
+	while $LISTNEXT(list, ptr, value) {
+		set word = $ZSTRIP(value, "<>W", "-")
+		if (word '= "") {
+			if (..Spell(word) = 0) {
+				set count = count + 1
+				w word, " "
+			}
+		}			
+	}
+	if (count > 0) {
+		w ?90, "<< """ _ str _ """", !	
+	}
+	return count
+}
+
+/// Checks russian localization. By default it checks localization stored in global "^CacheMsg". 
+/// If you use $$$TEXT localizaion method, then your local strings are stored exactly in this global. If no you can pass the global that you like.
+/// But this global must have strictly defined structure: on the second level it must have subnode "ru" and all the local strings must be values of "ru" subnodes. 
+/// All located mistakes will be stored in file with path <var>file</var> (Default path is "mistakes.txt" in your working directory).
+/// Return value is the number of mistakes in all localization .
+///  
+Method CheckLocalization(global = "^CacheMsg", file = "mistakes.txt") As %Integer
+{
+	set key = ""
+	set count = 0
+	open file:"NWS":5
+	use file
+	while(1) {
+		set key = $ORDER(@global@(key))
+		if (key = "") {
+			quit
+		}
+		if ($data(@global@(key, "ru"))) {
+			set nestedKey = ""
+			do {
+				set nestedKey = $ORDER(@global@(key, "ru", nestedKey))
+				if (nestedKey = "") { 
+					quit
+				}
+				set str =  @global@(key, "ru", nestedKey)
+				set count = count + ..CheckRuString(str)
+
+				
+			} while (nestedKey '= "")
+		}
+	}
+	
+	w !, "Ошибок - " _ count, !
+	close file
+	return count
+}
+
+Method CheckSystemLocalization() As %Integer
+{
+	return ..CheckLocalization("^%qCacheMsg")
+}
+
+}
+
