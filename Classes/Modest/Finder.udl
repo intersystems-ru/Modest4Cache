@@ -23,12 +23,10 @@ Method FindBySelectorList(node As MyHTML.MyHTMLTreeNode, selectorList As Modest.
     set collectionPtrPtr = ##class(MyHTML.MyHTML).GetPointerToNullPointer(..CNA)
     do ..CNA.CallFunction("modest_finder_by_selectors_list",..CNA.#VOID,$lb(..CNA.#POINTER,..CNA.#POINTER,..CNA.#POINTER,..CNA.#POINTER),
         ..FinderPtr,node.MyHtmlTreeNodePtr,selectorList.MyCssSelectorListPtr,collectionPtrPtr)
-    zw collectionPtrPtr
     set collectionPtr = ..CNA.PointerGetAt(collectionPtrPtr,..CNA.#POINTER,0)
-    zw collectionPtr
-    //set collection = ..CNA.PointerGetAt(collectionPtr,##class(MyHTML.MyHTMLTreeNode).#StructCollection,0)
+#;    set collection = ..CNA.PointerGetAt(collectionPtr,##class(MyHTML.MyHTMLTreeNode).#StructCollection,0)
     set nodePtrArr = ..CNA.PointerGetAt(collectionPtr,..CNA.#POINTER,0)
- //   set size = ..CNA.PointerGetAt(collectionPtr,..CNA.#SIZET,1)    
+#;    set size = ..CNA.PointerGetAt(collectionPtr,..CNA.#SIZET,1)
     set length = ..CNA.PointerGetAt(collectionPtr,..CNA.#SIZET,2)
     set list = ##class(%ListOfObjects).%New()
     for i = 1:1:length
