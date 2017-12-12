@@ -28,5 +28,12 @@ Method CreateEntry() As Modest.MyCSSEntry
     return ##class(Modest.MyCSSEntry).%New(..CNA,myCssEntryPtr)
 }
 
+Method OnClose() As %Status
+{
+	set argTypes = $lb(..CNA.#POINTER, ..CNA.#INT)
+	do ..CNA.CallFunction("mycss_destroy", ..CNA.#VOID, argTypes, ..MyCssPtr, 1)
+	q $$$OK
+}
+
 }
 

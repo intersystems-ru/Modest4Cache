@@ -5,6 +5,12 @@ Property CNA As CNA.CNA [ Private ];
 
 Property FinderPtr As %CacheString [ Private ];
 
+Property CollectionPtr As %CacheString;
+
+Property CollectionPtrPtr As %CacheString;
+
+Property NodePtrArr As %CacheString;
+
 Method %OnNew(cna As CNA.CNA, finderPtr As %CacheString) As %Status
 {
     set ..CNA = cna
@@ -35,7 +41,20 @@ Method FindBySelectorList(node As MyHTML.MyHTMLTreeNode, selectorList As Modest.
         set node1 = ##class(MyHTML.MyHTMLTreeNode).%New(..CNA,nodePtr)
         do list.Insert(node1)
     }
+    set ..NodePtrArr = nodePtrArr
+    set ..CollectionPtr = collectionPtr
+    set ..CollectionPtrPtr = collectionPtrPtr
     return list
+}
+
+Method OnClose() As %Status
+{
+	set argTypes = $lb(..CNA.#POINTER, ..CNA.#INT)
+	do ..CNA.CallFunction("modest_finder_destroy", ..CNA.#VOID, argTypes, ..FinderPtr, 1)
+	//do ..CNA.CallFunction("mycore_free", ..CNA.#VOID, $lb(..CNA.#POINTER), ..NodePtrArr)
+	//do ..CNA.CallFunction("mycore_free", ..CNA.#VOID, $lb(..CNA.#POINTER), ..CollectionPtr)
+	//do ..CNA.CallFunction("mycore_free", ..CNA.#VOID, $lb(..CNA.#POINTER), ..CollectionPtrPtr)
+	q $$$OK
 }
 
 }

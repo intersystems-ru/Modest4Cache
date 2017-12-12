@@ -5,7 +5,7 @@ Parameter MyEncodingUtf8 = 0;
 
 Property CNA As CNA.CNA [ Private ];
 
-Property MyHtmlTreePtr As %CacheString [ Private ];
+Property MyHtmlTreePtr As %CacheString;
 
 Method %OnNew(cna As CNA.CNA, myHtmlPtr As %CacheString) As %Status
 {

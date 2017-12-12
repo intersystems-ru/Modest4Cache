@@ -3,9 +3,9 @@ Class MyHTML.MyHTML Extends %RegisteredObject
 
 Parameter MyHtmlOptionsDefault = 0;
 
-Parameter CNAPath = "C:\InterSystems\Ensemble1\bin\libcna.x86-64.dll";
+Parameter CNAPath = "C:\InterSystems\Libs\libcna.x86-64.dll";
 
-Parameter MyHtmlPath = "C:\Modest\lib\libmodest-0.dll";
+Parameter MyHtmlPath = "C:\InterSystems\Libs\libmodest-0.dll";
 
 Property CNA As CNA.CNA;
 
@@ -31,6 +31,14 @@ ClassMethod GetPointerToNullPointer(cna As CNA.CNA) As %CacheString
     do stream.Write(cna.NULL)
     do stream.Flush()
     return cna.ConvertStreamToPointer(stream)
+}
+
+Method Free(tree)
+{
+	set argTypes = $lb(..CNA.#POINTER)
+	do ..CNA.CallFunction("myhtml_tree_destroy", ..CNA.#VOID, argTypes, tree.MyHtmlTreePtr)
+	do ..CNA.CallFunction("myhtml_destroy", ..CNA.#VOID, argTypes, ..MyHtmlPtr)
+	do ..CNA.FreeLibrary()
 }
 
 }

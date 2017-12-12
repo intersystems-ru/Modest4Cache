@@ -404,7 +404,7 @@ Method %OnNew(CNAPath As %String) As %Status [ Private ]
 	Quit $$$OK
 }
 
-Method %OnClose() As %Status [ Private ]
+Method %OnClose() As %Status
 {
 	try {
 		set s2p = $ZF(-4, 3, ..CNAId, "free_pointer")

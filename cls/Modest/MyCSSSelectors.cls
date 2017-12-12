@@ -21,5 +21,13 @@ Method Parse(selector As %String) As Modest.MyCSSSelectorList
     return ##class(Modest.MyCSSSelectorList).%New(..CNA,listPtr)
 }
 
+Method %OnClose() As %Status
+{
+	//destructor not found
+#;	set argTypes = $lb(..CNA.#POINTER, ..CNA.#INT)
+#;	do ..CNA.CallFunction("mycss_destroy", ..CNA.#VOID, argTypes, ..MyCssSelectorsPtr)
+	q $$$OK
+}
+
 }
 

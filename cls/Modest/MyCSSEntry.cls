@@ -18,5 +18,12 @@ Method Selectors() As Modest.MyCSSSelectors
     return ##class(Modest.MyCSSSelectors).%New(..CNA,myCssSelectorsPtr)
 }
 
+Method OnClose() As %Status
+{
+	set argTypes = $lb(..CNA.#POINTER)
+	do ..CNA.CallFunction("mycss_entry_destroy", ..CNA.#VOID, argTypes, ..MyCssEntryPtr)
+	quit $$$OK
+}
+
 }
 
